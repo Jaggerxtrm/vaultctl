@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vaultctl"
+version = "0.1.0"
+description = "SQLite FTS5 vault CLI — search, index, and manage your Obsidian vault"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "tomli>=2.0; python_version < '3.11'",
+    "watchdog>=4.0",
+]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.0"]
+dev = [
+    "pytest>=7.0",
+    "mypy>=1.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+vaultctl = "vaultctl.cli.app:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["vaultctl*"]
+
+[tool.setuptools.package-data]
+vaultctl = ["store/schema.sql"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
