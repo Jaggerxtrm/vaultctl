@@ -13,6 +13,9 @@ def _effective_max_distance(recursive: bool, max_distance: int | None) -> int:
 
 
 def run(args: Namespace) -> None:
+    # Intentional command surface: we do not expose separate `traverse`/`connected` commands.
+    # `outgoing`/`backlinks` with --recursive provide traversal, and
+    # `export --recursive --direction both` provides connected-component style exploration.
     max_distance = _effective_max_distance(bool(getattr(args, "recursive", False)), getattr(args, "max_distance", None))
 
     if args.graph_command == "outgoing":

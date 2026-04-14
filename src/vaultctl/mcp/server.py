@@ -17,7 +17,19 @@ def serve_stdio() -> None:
         method = request.get("tool")
         args = request.get("args", {})
         if method == "list_tools":
-            sys.stdout.write(json.dumps({"tools": sorted(tools)}) + "\n")
+            listed = sorted(set(tools) | {"context"})
+            sys.stdout.write(json.dumps({"tools": listed}) + "\n")
+            sys.stdout.flush()
+            continue
+        if method == "context":
+            depth = int(args.pop("depth", 1))
+            parent_id = args.pop("parent_id", args.pop("target", None))
+            if parent_id is None:
+                sys.stdout.write(json.dumps({"error": "context requires parent_id or target"}) + "\n")
+                sys.stdout.flush()
+                continue
+            result: Any = tools["get_full_context"](parent_id=parent_id, depth=depth)
+            sys.stdout.write(json.dumps({"result": result}, ensure_ascii=False) + "\n")
             sys.stdout.flush()
             continue
         if method not in tools:

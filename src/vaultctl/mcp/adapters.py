@@ -45,6 +45,17 @@ def _graph_neighbors(
     return combined[:limit]
 
 
+def _context_with_depth(parent_id: str, depth: int = 1) -> dict[str, Any]:
+    payload = context(parent_id)
+    if depth <= 1:
+        return payload
+
+    payload["links"] = outgoing(parent_id, recursive=True, max_distance=depth, folder=None, tag=None, status=None, limit=100)
+    payload["backlinks"] = backlinks(parent_id, recursive=True, max_distance=depth, folder=None, tag=None, status=None, limit=100)
+    payload["depth"] = depth
+    return payload
+
+
 def legacy_tool_adapters() -> dict[str, Callable[..., Any]]:
     return {
         "semantic_search": lambda query, folder=None, source=None, tag=None, status=None, n_results=5: run_search(
@@ -55,7 +66,7 @@ def legacy_tool_adapters() -> dict[str, Callable[..., Any]]:
             status=status,
             limit=n_results,
         ),
-        "get_full_context": lambda parent_id: context(parent_id),
+        "get_full_context": lambda parent_id, depth=1: _context_with_depth(parent_id, int(depth)),
         "reindex_vault": lambda force=False: index_sources(source=None, full=bool(force)),
         "get_index_stats": lambda: status(),
         "get_vault_statistics": lambda: stats(),

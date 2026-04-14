@@ -197,10 +197,11 @@ def orphans(
     params.update(filter_params)
 
     sql = f"""
-    SELECT d.source_id, d.rel_path, d.title, COALESCE(gs.in_degree, 0) AS in_degree
+    SELECT d.source_id, d.rel_path, d.title, COALESCE(gs.in_degree, 0) AS in_degree, COALESCE(gs.out_degree, 0) AS out_degree
     FROM documents d
     LEFT JOIN document_graph_stats gs ON gs.document_id = d.id
     WHERE COALESCE(gs.in_degree, 0) = 0
+      AND COALESCE(gs.out_degree, 0) = 0
       {source_clause}
       {filter_sql}
     ORDER BY d.source_id, d.rel_path
@@ -278,10 +279,7 @@ def export_graph(
     if from_doc_id is not None:
         params["from_doc_id"] = from_doc_id
         params["max_hops"] = max_hops
-        edge_source = """
-        WITH RECURSIVE walk(doc_id, distance, path, traversed) AS (
-          SELECT :from_doc_id, 0, ',' || :from_doc_id || ',', 0
-          UNION ALL
+        step_sql = """
           SELECT l.resolved_document_id, walk.distance + 1, walk.path || l.resolved_document_id || ',', walk.traversed + 1
           FROM walk
           JOIN document_links l ON l.document_id = walk.doc_id
@@ -289,6 +287,23 @@ def export_graph(
             AND walk.distance < :max_hops
             AND walk.traversed < 100000
             AND instr(walk.path, ',' || l.resolved_document_id || ',') = 0
+        """
+        if direction == "both":
+            step_sql += """
+          UNION ALL
+          SELECT l.document_id, walk.distance + 1, walk.path || l.document_id || ',', walk.traversed + 1
+          FROM walk
+          JOIN document_links l ON l.resolved_document_id = walk.doc_id
+          WHERE l.resolution_state='resolved'
+            AND walk.distance < :max_hops
+            AND walk.traversed < 100000
+            AND instr(walk.path, ',' || l.document_id || ',') = 0
+            """
+        edge_source = f"""
+        WITH RECURSIVE walk(doc_id, distance, path, traversed) AS (
+          SELECT :from_doc_id, 0, ',' || :from_doc_id || ',', 0
+          UNION ALL
+          {step_sql}
         )
         SELECT l.document_id AS src_id, l.resolved_document_id AS dst_id
         FROM document_links l

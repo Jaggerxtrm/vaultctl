@@ -65,7 +65,7 @@ def context(target: str) -> dict[str, object]:
         dict(row)
         for row in conn.execute(
             """
-            SELECT target.source_id, target.rel_path, target.title
+            SELECT DISTINCT target.source_id, target.rel_path, target.title
             FROM documents src
             JOIN document_links l ON l.document_id = src.id
             JOIN documents target ON target.id = l.resolved_document_id
@@ -79,7 +79,7 @@ def context(target: str) -> dict[str, object]:
         dict(row)
         for row in conn.execute(
             """
-            SELECT src.source_id, src.rel_path, src.title
+            SELECT DISTINCT src.source_id, src.rel_path, src.title
             FROM documents target
             JOIN document_links l ON l.resolved_document_id = target.id
             JOIN documents src ON src.id = l.document_id
