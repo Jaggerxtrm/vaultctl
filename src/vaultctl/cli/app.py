@@ -7,7 +7,17 @@ from vaultctl.cli import audit, graph, index, inspect, mcp, note, search, stats,
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="vaultctl")
+    parser = argparse.ArgumentParser(
+        prog="vaultctl",
+        description="Local-first markdown search, indexing, graph navigation, and translation tooling.",
+        epilog=(
+            "Translate markdown for multilingual corpora:\n"
+            "  vaultctl translate notes/ricerca.md --target en --output notes/en\n"
+            "\n"
+            "For translate, install extras with: pip install .[llm]"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     subparsers = parser.add_subparsers(dest="command")
 
     search_cmd = subparsers.add_parser("search")
@@ -117,7 +127,13 @@ def build_parser() -> argparse.ArgumentParser:
     export_cmd.add_argument("--format", choices=["json", "dot"], default="json")
     add_shared_filters(export_cmd)
 
-    translate_cmd = subparsers.add_parser("translate")
+    translate_cmd = subparsers.add_parser(
+        "translate",
+        help="Translate markdown with an LLM provider",
+        description=translate.TRANSLATE_DESCRIPTION,
+        epilog=translate.TRANSLATE_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     translate_cmd.add_argument("path")
     translate_cmd.add_argument("--target", required=True)
     translate_cmd.add_argument("--output")

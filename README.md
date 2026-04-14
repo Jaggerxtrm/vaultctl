@@ -62,6 +62,9 @@ vaultctl find "planner" --source vault -n 20 --json
 vaultctl tree --source vault --depth 3 --json
 vaultctl context "vault:notes/roadmap.md" --json
 
+# translate markdown (requires LLM extras + provider env vars)
+vaultctl translate notes/ricerca.md --target en --output notes/en --json
+
 # note operations
 vaultctl note read "notes/todo.md" --source vault --json
 vaultctl note append "notes/todo.md" "\n- finish migration" --source vault --json
@@ -98,6 +101,45 @@ vaultctl graph export "vault:notes/alpha.md" --recursive --max-distance 3 --dire
 ```
 
 All graph commands support `--source`, `--folder`, `--tag`, `--status`, `-n`, and `--json`.
+
+## Translate subcommand
+
+Use `vaultctl translate` to translate markdown while preserving frontmatter, code blocks, and wikilinks.
+
+### Usage
+
+```bash
+vaultctl translate <path> --target <language-code> [--output <directory>] [--json]
+```
+
+Key options:
+- `--target` (required): target language code (for example `en`, `it`, `de`).
+- `--output`: output directory for translated files. If omitted, the default output behavior from the translate service is used.
+
+### Install extras
+
+```bash
+pip install .[llm]
+```
+
+### Provider environment variables
+
+Set provider credentials before running translate:
+
+```bash
+export VAULTCTL_LLM_PROVIDER=openai
+export VAULTCTL_LLM_API_KEY=your_api_key
+# optional: for compatible/self-hosted endpoints
+export VAULTCTL_LLM_BASE_URL=https://api.openai.com/v1
+```
+
+### Practical example (Italian markdown -> English for FTS5 search)
+
+```bash
+vaultctl translate notes/ricerca.md --target en --output notes/en
+vaultctl index --source vault
+vaultctl search "retrieval pipeline" --source vault -n 10 --json
+```
 
 ## Run as MCP bridge (legacy clients)
 
