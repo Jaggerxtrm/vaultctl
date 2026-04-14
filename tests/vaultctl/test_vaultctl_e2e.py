@@ -407,6 +407,43 @@ def test_e2e_vaultctl_features(temp_vault_env: dict[str, Path]) -> None:
     duplicates = run_vaultctl_json("audit", "duplicates", "--json", home=home)
     assert duplicates == [{"source_id": "vault", "title": "Shared Duplicate", "count": 2}]
 
+    # graph path: alpha -> beta -> deep (returns ordered list of nodes)
+    graph_path = run_vaultctl_json(
+        "graph", "path", "vault:folder-a/alpha.md", "vault:folder-b/deep.md", "--json", home=home
+    )
+    path_rels = [n["rel_path"] for n in graph_path]
+    assert path_rels == ["folder-a/alpha.md", "folder-a/beta.md", "folder-b/deep.md"]
+    assert len(graph_path) == 3
+
+    # graph broken --state dangling only
+    dangling_only = run_vaultctl_json("graph", "broken", "--state", "dangling", "--json", home=home)
+    assert all(row["resolution_state"] == "dangling" for row in dangling_only)
+    assert any(row["raw_target"] == "Missing Note" for row in dangling_only)
+    assert not any(row["raw_target"] == "Shared Duplicate" for row in dangling_only)
+
+    # search --rank hybrid returns results without error
+    hybrid_results = run_vaultctl_json("search", "repo", "--rank", "hybrid", "-n", "5", "--json", home=home)
+    assert isinstance(hybrid_results, list)
+    assert len(hybrid_results) > 0
+    assert all("score" in row and "rel_path" in row for row in hybrid_results)
+
+    # graph export --format dot
+    env = os.environ.copy()
+    env["HOME"] = str(home)
+    src_path = str(Path(__file__).resolve().parents[2] / "src")
+    env["PYTHONPATH"] = src_path if "PYTHONPATH" not in env else f"{src_path}:{env['PYTHONPATH']}"
+    dot_result = subprocess.run(
+        [
+            sys.executable, "-m", "vaultctl.cli.app",
+            "graph", "export", "vault:folder-a/alpha.md",
+            "--recursive", "--max-distance", "2",
+            "--format", "dot",
+        ],
+        env=env, text=True, capture_output=True, check=True,
+    )
+    assert "digraph" in dot_result.stdout
+    assert "folder-a/alpha.md" in dot_result.stdout or "Alpha Note" in dot_result.stdout
+
 
 def test_mcp_context_depth_uses_graph_traversal(temp_vault_env: dict[str, Path]) -> None:
     home = temp_vault_env["home"]
