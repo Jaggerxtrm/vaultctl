@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from vaultctl.cli import audit, graph, index, inspect, mcp, note, search, stats
+from vaultctl.cli import audit, graph, index, inspect, mcp, note, search, stats, translate
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -117,6 +117,12 @@ def build_parser() -> argparse.ArgumentParser:
     export_cmd.add_argument("--format", choices=["json", "dot"], default="json")
     add_shared_filters(export_cmd)
 
+    translate_cmd = subparsers.add_parser("translate")
+    translate_cmd.add_argument("path")
+    translate_cmd.add_argument("--target", required=True)
+    translate_cmd.add_argument("--output")
+    translate_cmd.add_argument("--json", action="store_true")
+
     mcp_cmd = subparsers.add_parser("mcp")
     mcp_sub = mcp_cmd.add_subparsers(dest="mcp_command", required=True)
     mcp_serve = mcp_sub.add_parser("serve")
@@ -125,7 +131,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-COMMAND_NAMES = {"search", "index", "watch", "status", "note", "find", "tree", "context", "stats", "audit", "graph", "mcp"}
+COMMAND_NAMES = {"search", "index", "watch", "status", "note", "find", "tree", "context", "stats", "audit", "graph", "translate", "mcp"}
 
 
 def main() -> None:
@@ -157,6 +163,8 @@ def main() -> None:
         audit.run(args)
     elif args.command == "graph":
         graph.run(args)
+    elif args.command == "translate":
+        translate.run(args)
     elif args.command == "mcp" and args.mcp_command == "serve":
         mcp.run(args)
     else:
