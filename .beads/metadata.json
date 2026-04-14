@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "vaultctl",
+  "project_id": "f1202604-ec1d-4986-bf52-826200d51f73"
+}
