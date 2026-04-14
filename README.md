@@ -49,8 +49,9 @@ Notes:
 # index all configured sources
 vaultctl index --json
 
-# run a search
+# search (BM25 default, or hybrid BM25+in-degree boost)
 vaultctl search "hybrid retrieval" -n 8 --json
+vaultctl search "hybrid retrieval" --rank hybrid -n 8 --json
 
 # inspect corpus state
 vaultctl status --json
@@ -59,7 +60,7 @@ vaultctl stats --json
 # content discovery helpers
 vaultctl find "planner" --source vault -n 20 --json
 vaultctl tree --source vault --depth 3 --json
-vaultctl context "notes/roadmap.md" --json
+vaultctl context "vault:notes/roadmap.md" --json
 
 # note operations
 vaultctl note read "notes/todo.md" --source vault --json
@@ -68,6 +69,35 @@ vaultctl note append "notes/todo.md" "\n- finish migration" --source vault --jso
 # audits
 vaultctl audit orphans --source vault -n 50 --json
 ```
+
+## Graph commands
+
+vaultctl builds a resolved wikilink graph at index time. All `[[links]]` are resolved to document IDs with explicit `resolved`, `ambiguous`, or `dangling` states.
+
+```bash
+# adjacency — 1-hop or recursive
+vaultctl graph outgoing "vault:notes/alpha.md" --json
+vaultctl graph outgoing "vault:notes/alpha.md" --recursive --max-distance 3 --json
+vaultctl graph backlinks "vault:notes/alpha.md" --recursive --json
+
+# shortest path between two notes
+vaultctl graph path "vault:notes/alpha.md" "vault:notes/deep.md" --json
+
+# diagnostics
+vaultctl graph broken --json                        # dangling + ambiguous links
+vaultctl graph broken --state dangling --json       # dangling only
+vaultctl graph orphans --json                       # notes with no in or out resolved links
+
+# ranking by structural importance (in-degree)
+vaultctl graph rank -n 20 --json
+
+# export graph for downstream tooling
+vaultctl graph export --format json --json
+vaultctl graph export --format dot > vault.dot      # Graphviz
+vaultctl graph export "vault:notes/alpha.md" --recursive --max-distance 3 --direction both --format dot
+```
+
+All graph commands support `--source`, `--folder`, `--tag`, `--status`, `-n`, and `--json`.
 
 ## Run as MCP bridge (legacy clients)
 
@@ -99,6 +129,10 @@ Use this mapping when replacing old calls:
 | `get_orphaned_notes()` | `vaultctl audit orphans --json` |
 | `get_most_linked_notes(n_results=10)` | `vaultctl audit linked -n 10 --json` |
 | `get_duplicate_content(...)` | `vaultctl audit duplicates --json` |
+| `graph_neighbors(note, depth=2)` | `vaultctl graph outgoing "<note>" --recursive --max-distance 2 --json` |
+| `graph_path(src, dst)` | `vaultctl graph path "<src>" "<dst>" --json` |
+| `graph_broken_links()` | `vaultctl graph broken --json` |
+| `graph_rank(n_results=20)` | `vaultctl graph rank -n 20 --json` |
 
 ## Code layout (current)
 
