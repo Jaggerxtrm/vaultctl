@@ -1,0 +1,10 @@
+{"id":"int-5332ac27","kind":"tool_call","created_at":"2026-04-14T15:39:37.784695524Z","actor":"you@example.com","issue_id":"vaultctl-7gv","model":"dashscope/qwen3.5-plus","tool_name":"researcher","exit_code":0}
+{"id":"int-58777f20","kind":"tool_call","created_at":"2026-04-14T15:48:25.687807223Z","actor":"you@example.com","issue_id":"vaultctl-7gv","model":"openai-codex/gpt-5.3-codex","tool_name":"researcher","exit_code":0}
+{"id":"int-e7fae1a1","kind":"tool_call","created_at":"2026-04-14T16:15:45.719880751Z","actor":"you@example.com","issue_id":"vaultctl-0nv","model":"openai-codex/gpt-5.4","tool_name":"overthinker","exit_code":0}
+{"id":"int-3f2f92ac","kind":"tool_call","created_at":"2026-04-14T16:40:32.145455835Z","actor":"you@example.com","issue_id":"vaultctl-1ej","model":"openai-codex/gpt-5.3-codex","tool_name":"executor","exit_code":0}
+{"id":"int-a2c9f223","kind":"tool_call","created_at":"2026-04-14T16:45:27.448599264Z","actor":"you@example.com","issue_id":"vaultctl-c31","model":"zai/glm-4.7","tool_name":"explorer","exit_code":0}
+{"id":"int-01492fed","kind":"tool_call","created_at":"2026-04-14T16:46:02.701350022Z","actor":"you@example.com","issue_id":"vaultctl-pvv","model":"openai-codex/gpt-5.3-codex","tool_name":"reviewer","exit_code":0}
+{"id":"int-2b77b203","kind":"tool_call","created_at":"2026-04-14T16:54:52.996843659Z","actor":"you@example.com","issue_id":"vaultctl-aa9","model":"openai-codex/gpt-5.3-codex","tool_name":"reviewer","exit_code":0}
+{"id":"int-2bfc0e80","kind":"tool_call","created_at":"2026-04-14T17:52:42.190195596Z","actor":"you@example.com","issue_id":"vaultctl-qxn","model":"openai-codex/gpt-5.3-codex","tool_name":"executor","exit_code":0}
+{"id":"int-3779377a","kind":"tool_call","created_at":"2026-04-14T18:14:34.788462984Z","actor":"you@example.com","issue_id":"vaultctl-t6g","model":"openai-codex/gpt-5.3-codex","tool_name":"reviewer","exit_code":0}
+{"id":"int-cff6bd5a","kind":"tool_call","created_at":"2026-04-14T18:18:22.059469935Z","actor":"you@example.com","issue_id":"vaultctl-2yo","model":"openai-codex/gpt-5.3-codex","tool_name":"reviewer","exit_code":0}

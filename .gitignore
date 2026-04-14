@@ -10,3 +10,16 @@ venv/
 
 # Dolt database files (added by bd init)
 .dolt/
+
+.specialists/jobs/
+.specialists/ready/
+.specialists/db/*.db
+.specialists/db/*.db-wal
+.specialists/db/*.db-shm
+.gitnexus
+# bd worktree
+.worktrees/vaultctl-7gv/vaultctl-7gv-researcher/
+# bd worktree
+.worktrees/vaultctl-1ej/vaultctl-1ej-executor/
+# bd worktree
+.worktrees/vaultctl-qxn/vaultctl-qxn-executor/
