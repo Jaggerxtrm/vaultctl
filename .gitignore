@@ -11,15 +11,24 @@ venv/
 # Dolt database files (added by bd init)
 .dolt/
 
-.specialists/jobs/
-.specialists/ready/
-.specialists/db/*.db
-.specialists/db/*.db-wal
-.specialists/db/*.db-shm
+.specialists/
 .gitnexus
-# bd worktree
-.worktrees/vaultctl-7gv/vaultctl-7gv-researcher/
-# bd worktree
-.worktrees/vaultctl-1ej/vaultctl-1ej-executor/
-# bd worktree
-.worktrees/vaultctl-qxn/vaultctl-qxn-executor/
+# Worktrees (managed by specialists)
+.worktrees/
+
+# Local tooling runtime
+.claude/
+.pi/mcp.json
+.pi/settings.json
+.pi/skills
+.serena/
+.mcp.json
+.coverage
+data/
+
+# xtrm runtime (reports/ and memory.md stay tracked)
+.xtrm/config/
+.xtrm/hooks/
+.xtrm/packages/
+.xtrm/skills/
+.xtrm/statusline-claim
