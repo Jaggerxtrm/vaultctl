@@ -3,8 +3,6 @@ from __future__ import annotations
 import sqlite3
 from typing import Any
 
-from vaultctl.store.queries import FTS_SEARCH_SQL
-
 
 def search_documents(
     conn: sqlite3.Connection,
@@ -15,27 +13,55 @@ def search_documents(
     tag: str | None = None,
     status: str | None = None,
 ) -> list[dict[str, Any]]:
-    rows = conn.execute(FTS_SEARCH_SQL, {"query": query, "limit": limit}).fetchall()
+    params: dict[str, Any] = {"query": query, "limit": limit}
+    extra: list[str] = []
+
+    if source:
+        extra.append("sections_fts.source_id = :source")
+        params["source"] = source
+
+    if folder:
+        folder_clean = folder.rstrip("/")
+        extra.append(
+            "(sections_fts.rel_path = :folder OR sections_fts.rel_path LIKE :folder_prefix)"
+        )
+        params["folder"] = folder_clean
+        params["folder_prefix"] = folder_clean + "/%"
+
+    if tag:
+        extra.append("(' ' || d.tags_text || ' ') LIKE :tag_pattern")
+        params["tag_pattern"] = f"% {tag} %"
+
+    if status:
+        extra.append("d.status = :status")
+        params["status"] = status
+
+    where = "sections_fts MATCH :query"
+    if extra:
+        where += " AND " + " AND ".join(extra)
+
+    sql = f"""
+    SELECT
+      bm25(sections_fts, 8.0, 4.0, 2.0, 1.0) AS score,
+      sections_fts.source_id,
+      sections_fts.rel_path,
+      sections_fts.title,
+      snippet(sections_fts, 3, '', '', ' … ', 24) AS snippet,
+      d.status,
+      d.tags_text
+    FROM sections_fts
+    LEFT JOIN documents d
+      ON d.source_id = sections_fts.source_id
+      AND d.rel_path = sections_fts.rel_path
+    WHERE {where}
+    ORDER BY score
+    LIMIT :limit
+    """
+
     results: list[dict[str, Any]] = []
-    for row in rows:
-        metadata = conn.execute(
-            """
-            SELECT d.status, d.tags_text
-            FROM documents d
-            WHERE d.source_id=? AND d.rel_path=?
-            """,
-            (row["source_id"], row["rel_path"]),
-        ).fetchone()
-        if source and row["source_id"] != source:
-            continue
-        if folder and not str(row["rel_path"]).startswith(folder.rstrip("/") + "/") and str(row["rel_path"]) != folder.rstrip("/"):
-            continue
-        tags_text = str(metadata["tags_text"] if metadata else "")
-        if tag and tag not in tags_text.split():
-            continue
-        doc_status = str(metadata["status"]) if metadata and metadata["status"] is not None else None
-        if status and doc_status != status:
-            continue
+    for row in conn.execute(sql, params).fetchall():
+        tags_text = str(row["tags_text"] or "")
+        doc_status = str(row["status"]) if row["status"] is not None else None
         results.append(
             {
                 "score": float(row["score"]),
@@ -47,4 +73,4 @@ def search_documents(
                 "status": doc_status,
             }
         )
-    return results[:limit]
+    return results
