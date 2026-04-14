@@ -8,7 +8,7 @@ from vaultctl.core.errors import NotFoundError, TranslationError
 from vaultctl.core.llm import LLMClient, load_llm_settings
 from vaultctl.core.paths import ensure_parent
 
-FRONTMATTER_RE = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
+FRONTMATTER_RE = re.compile(r"\A---[ \t]*\r?\n.*?\r?\n---[ \t]*(?:\r?\n|$)", re.DOTALL)
 FENCED_BLOCK_RE = re.compile(r"```[^\n]*\n.*?\n```", re.DOTALL)
 INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
 WIKILINK_RE = re.compile(r"\[\[[^\]]+\]\]")
@@ -88,10 +88,14 @@ def _translate_markdown_file(markdown_path: Path, target_language: str, llm_clie
 
 
 def _split_frontmatter(content: str) -> tuple[str, str]:
-    match = FRONTMATTER_RE.match(content)
+    stripped_content = content.lstrip("\ufeff \t\r\n")
+    leading_prefix = content[: len(content) - len(stripped_content)]
+    match = FRONTMATTER_RE.match(stripped_content)
     if match is None:
         return "", content
-    return match.group(0), content[match.end() :]
+    frontmatter = f"{leading_prefix}{match.group(0)}"
+    body = stripped_content[match.end() :]
+    return frontmatter, body
 
 
 def _mask_non_prose_segments(content: str) -> tuple[str, dict[str, str]]:
