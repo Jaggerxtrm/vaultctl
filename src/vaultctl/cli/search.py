@@ -14,5 +14,6 @@ def run(args: Namespace) -> None:
         folder=args.folder,
         tag=args.tag,
         status=args.status,
+        rank=args.rank,
     )
     emit(results, args.json)

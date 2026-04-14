@@ -7,8 +7,8 @@ def find_orphans(conn: sqlite3.Connection, source: str | None, limit: int) -> li
     query = """
     SELECT d.source_id, d.rel_path, d.title
     FROM documents d
-    LEFT JOIN document_links l ON l.target = d.title
-    WHERE l.target IS NULL
+    LEFT JOIN document_graph_stats gs ON gs.document_id = d.id
+    WHERE COALESCE(gs.in_degree, 0) = 0
     """
     params: list[object] = []
     if source:
@@ -23,7 +23,7 @@ def find_linked(conn: sqlite3.Connection, source: str | None, limit: int) -> lis
     query = """
     SELECT DISTINCT d.source_id, d.rel_path, d.title
     FROM documents d
-    INNER JOIN document_links l ON l.document_id = d.id
+    INNER JOIN document_links l ON l.document_id = d.id AND l.resolution_state='resolved'
     """
     params: list[object] = []
     if source:

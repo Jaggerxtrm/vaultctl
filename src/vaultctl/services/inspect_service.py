@@ -61,19 +61,34 @@ def context(target: str) -> dict[str, object]:
     ).fetchone()
     if not doc:
         raise NotFoundError(f"No indexed document for {target}")
-    links = [row[0] for row in conn.execute(
-        "SELECT target FROM document_links l JOIN documents d ON d.id=l.document_id WHERE d.source_id=? AND d.rel_path=?",
-        (source_id, rel_path),
-    ).fetchall()]
-    backlinks = [dict(row) for row in conn.execute(
-        """
-        SELECT d.source_id, d.rel_path, d.title
-        FROM document_links l JOIN documents d ON d.id=l.document_id
-        WHERE l.target = ?
-        ORDER BY d.source_id, d.rel_path
-        """,
-        (doc["title"],),
-    ).fetchall()]
+    links = [
+        dict(row)
+        for row in conn.execute(
+            """
+            SELECT target.source_id, target.rel_path, target.title
+            FROM documents src
+            JOIN document_links l ON l.document_id = src.id
+            JOIN documents target ON target.id = l.resolved_document_id
+            WHERE src.source_id=? AND src.rel_path=? AND l.resolution_state='resolved'
+            ORDER BY target.source_id, target.rel_path
+            """,
+            (source_id, rel_path),
+        ).fetchall()
+    ]
+    backlinks = [
+        dict(row)
+        for row in conn.execute(
+            """
+            SELECT src.source_id, src.rel_path, src.title
+            FROM documents target
+            JOIN document_links l ON l.resolved_document_id = target.id
+            JOIN documents src ON src.id = l.document_id
+            WHERE target.source_id=? AND target.rel_path=? AND l.resolution_state='resolved'
+            ORDER BY src.source_id, src.rel_path
+            """,
+            (source_id, rel_path),
+        ).fetchall()
+    ]
     return {
         "source_id": source_id,
         "rel_path": rel_path,

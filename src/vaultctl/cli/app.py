@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from vaultctl.cli import audit, index, inspect, mcp, note, search, stats
+from vaultctl.cli import audit, graph, index, inspect, mcp, note, search, stats
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -17,6 +17,7 @@ def build_parser() -> argparse.ArgumentParser:
     search_cmd.add_argument("--tag")
     search_cmd.add_argument("--status")
     search_cmd.add_argument("-n", type=int, default=5)
+    search_cmd.add_argument("--rank", choices=["bm25", "hybrid"], default="bm25")
     search_cmd.add_argument("--json", action="store_true")
 
     index_cmd = subparsers.add_parser("index")
@@ -68,6 +69,54 @@ def build_parser() -> argparse.ArgumentParser:
     audit_cmd.add_argument("-n", type=int, default=20)
     audit_cmd.add_argument("--json", action="store_true")
 
+    graph_cmd = subparsers.add_parser("graph")
+    graph_sub = graph_cmd.add_subparsers(dest="graph_command", required=True)
+
+    def add_shared_filters(command: argparse.ArgumentParser) -> None:
+        command.add_argument("--source")
+        command.add_argument("--folder")
+        command.add_argument("--tag")
+        command.add_argument("--status")
+        command.add_argument("-n", type=int, default=20)
+        command.add_argument("--json", action="store_true")
+
+    outgoing_cmd = graph_sub.add_parser("outgoing")
+    outgoing_cmd.add_argument("note")
+    outgoing_cmd.add_argument("--recursive", action="store_true")
+    outgoing_cmd.add_argument("--max-distance", type=int)
+    add_shared_filters(outgoing_cmd)
+
+    backlinks_cmd = graph_sub.add_parser("backlinks")
+    backlinks_cmd.add_argument("note")
+    backlinks_cmd.add_argument("--recursive", action="store_true")
+    backlinks_cmd.add_argument("--max-distance", type=int)
+    add_shared_filters(backlinks_cmd)
+
+    path_cmd = graph_sub.add_parser("path")
+    path_cmd.add_argument("source_note")
+    path_cmd.add_argument("target_note")
+    path_cmd.add_argument("--max-distance", type=int, default=6)
+    path_cmd.add_argument("--json", action="store_true")
+
+    broken_cmd = graph_sub.add_parser("broken")
+    broken_cmd.add_argument("--state", choices=["dangling", "ambiguous", "resolved"])
+    add_shared_filters(broken_cmd)
+
+    orphans_cmd = graph_sub.add_parser("orphans")
+    add_shared_filters(orphans_cmd)
+
+    rank_cmd = graph_sub.add_parser("rank")
+    rank_cmd.add_argument("--metric", default="in_degree")
+    add_shared_filters(rank_cmd)
+
+    export_cmd = graph_sub.add_parser("export")
+    export_cmd.add_argument("note", nargs="?")
+    export_cmd.add_argument("--recursive", action="store_true")
+    export_cmd.add_argument("--max-distance", type=int)
+    export_cmd.add_argument("--direction", choices=["out", "in", "both"], default="out")
+    export_cmd.add_argument("--format", choices=["json", "dot"], default="json")
+    add_shared_filters(export_cmd)
+
     mcp_cmd = subparsers.add_parser("mcp")
     mcp_sub = mcp_cmd.add_subparsers(dest="mcp_command", required=True)
     mcp_serve = mcp_sub.add_parser("serve")
@@ -76,7 +125,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-COMMAND_NAMES = {"search", "index", "watch", "status", "note", "find", "tree", "context", "stats", "audit", "mcp"}
+COMMAND_NAMES = {"search", "index", "watch", "status", "note", "find", "tree", "context", "stats", "audit", "graph", "mcp"}
 
 
 def main() -> None:
@@ -106,6 +155,8 @@ def main() -> None:
         stats.run(args)
     elif args.command == "audit":
         audit.run(args)
+    elif args.command == "graph":
+        graph.run(args)
     elif args.command == "mcp" and args.mcp_command == "serve":
         mcp.run(args)
     else:

@@ -314,6 +314,10 @@ def test_mcp_legacy_adapter_completeness() -> None:
         "get_orphaned_notes",
         "get_vault_statistics",
         "get_vault_structure",
+        "graph_broken_links",
+        "graph_neighbors",
+        "graph_path",
+        "graph_rank",
         "index_note",
         "read_note",
         "reindex_vault",
@@ -323,4 +327,4 @@ def test_mcp_legacy_adapter_completeness() -> None:
         "write_note",
     }
     assert set(adapters.keys()) == expected_names
-    assert len(adapters) == 16
+    assert len(adapters) == 20

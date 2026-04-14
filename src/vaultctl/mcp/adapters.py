@@ -3,11 +3,46 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from vaultctl.services.audit_service import run_audit
+from vaultctl.services.graph_service import backlinks, broken, outgoing, path, rank
 from vaultctl.services.index_service import index_sources
-from vaultctl.services.inspect_service import context, find, status, tree
+from vaultctl.services.inspect_service import context, status, tree
 from vaultctl.services.note_service import append_note, delete_note, extract_links, read_note, write_note
 from vaultctl.services.search_service import run_search
 from vaultctl.services.stats_service import stats
+
+
+def _normalize_note_target(note: str, source: str | None) -> str:
+    if ":" in note or not source:
+        return note
+    return f"{source}:{note}"
+
+
+def _graph_neighbors(
+    note: str,
+    direction: str,
+    recursive: bool,
+    max_distance: int,
+    source: str | None,
+    folder: str | None,
+    tag: str | None,
+    status_filter: str | None,
+    limit: int,
+) -> list[dict[str, Any]]:
+    target = _normalize_note_target(note, source)
+    if direction == "out":
+        return outgoing(target, recursive, max_distance, folder, tag, status_filter, limit)
+    if direction == "in":
+        return backlinks(target, recursive, max_distance, folder, tag, status_filter, limit)
+
+    combined = outgoing(target, recursive, max_distance, folder, tag, status_filter, limit)
+    seen = {(row["source_id"], row["rel_path"]) for row in combined}
+    for row in backlinks(target, recursive, max_distance, folder, tag, status_filter, limit):
+        key = (row["source_id"], row["rel_path"])
+        if key in seen:
+            continue
+        seen.add(key)
+        combined.append(row)
+    return combined[:limit]
 
 
 def legacy_tool_adapters() -> dict[str, Callable[..., Any]]:
@@ -35,4 +70,18 @@ def legacy_tool_adapters() -> dict[str, Callable[..., Any]]:
         "get_orphaned_notes": lambda: run_audit("orphans", None, 100),
         "get_most_linked_notes": lambda n_results=10: run_audit("linked", None, n_results),
         "get_duplicate_content": lambda similarity_threshold=0.95: run_audit("duplicates", None, 100),
+        "graph_neighbors": lambda note, direction="out", recursive=False, max_distance=1, source=None, folder=None, tag=None, status=None, limit=20: _graph_neighbors(
+            note,
+            direction,
+            bool(recursive),
+            int(max_distance),
+            source,
+            folder,
+            tag,
+            status,
+            int(limit),
+        ),
+        "graph_path": lambda source_note, target_note, max_distance=6: path(source_note, target_note, int(max_distance)),
+        "graph_broken_links": lambda source=None, folder=None, state=None, limit=20: broken(source, folder, None, None, state, int(limit)),
+        "graph_rank": lambda metric="in_degree", source=None, folder=None, tag=None, status=None, limit=20: rank(source, folder, tag, status, metric, int(limit)),
     }

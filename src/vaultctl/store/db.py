@@ -15,6 +15,53 @@ def connect(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
+def _table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    return {str(row[1]) for row in rows}
+
+
+def _recreate_document_links(conn: sqlite3.Connection) -> None:
+    conn.execute("DROP TABLE IF EXISTS document_links")
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS document_links (
+          document_id INTEGER NOT NULL,
+          raw_target TEXT NOT NULL,
+          link_target TEXT NOT NULL,
+          link_target_ci TEXT NOT NULL,
+          link_target_slug TEXT NOT NULL,
+          target_fragment TEXT,
+          resolved_document_id INTEGER,
+          resolution_state TEXT NOT NULL DEFAULT 'dangling',
+          resolution_method TEXT,
+          ambiguous_count INTEGER NOT NULL DEFAULT 0,
+          occurrences INTEGER NOT NULL DEFAULT 1,
+          UNIQUE(document_id, raw_target, target_fragment),
+          FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
+          FOREIGN KEY(resolved_document_id) REFERENCES documents(id) ON DELETE SET NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_links_document_id ON document_links(document_id);
+        CREATE INDEX IF NOT EXISTS idx_links_target_ci ON document_links(link_target_ci);
+        CREATE INDEX IF NOT EXISTS idx_links_target_slug ON document_links(link_target_slug);
+        CREATE INDEX IF NOT EXISTS idx_links_state ON document_links(resolution_state);
+        CREATE INDEX IF NOT EXISTS idx_links_resolved ON document_links(resolved_document_id);
+        """
+    )
+
+
 def _ensure_schema(conn: sqlite3.Connection) -> None:
     schema_path = Path(__file__).resolve().parent / "schema.sql"
     conn.executescript(schema_path.read_text(encoding="utf-8"))
+
+    document_columns = _table_columns(conn, "documents")
+    if "title_ci" not in document_columns:
+        conn.execute("ALTER TABLE documents ADD COLUMN title_ci TEXT NOT NULL DEFAULT ''")
+    if "title_slug" not in document_columns:
+        conn.execute("ALTER TABLE documents ADD COLUMN title_slug TEXT NOT NULL DEFAULT ''")
+
+    link_columns = _table_columns(conn, "document_links")
+    if "resolution_state" not in link_columns:
+        _recreate_document_links(conn)
+
+    conn.commit()

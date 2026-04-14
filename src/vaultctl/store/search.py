@@ -12,6 +12,7 @@ def search_documents(
     folder: str | None = None,
     tag: str | None = None,
     status: str | None = None,
+    rank: str = "bm25",
 ) -> list[dict[str, Any]]:
     params: dict[str, Any] = {"query": query, "limit": limit}
     extra: list[str] = []
@@ -40,9 +41,13 @@ def search_documents(
     if extra:
         where += " AND " + " AND ".join(extra)
 
+    score_expr = "bm25(sections_fts, 8.0, 4.0, 2.0, 1.0)"
+    if rank == "hybrid":
+        score_expr = "bm25(sections_fts, 8.0, 4.0, 2.0, 1.0) - (0.1 * ln(1 + COALESCE(gs.in_degree, 0)))"
+
     sql = f"""
     SELECT
-      bm25(sections_fts, 8.0, 4.0, 2.0, 1.0) AS score,
+      {score_expr} AS score,
       sections_fts.source_id,
       sections_fts.rel_path,
       sections_fts.title,
@@ -53,6 +58,8 @@ def search_documents(
     LEFT JOIN documents d
       ON d.source_id = sections_fts.source_id
       AND d.rel_path = sections_fts.rel_path
+    LEFT JOIN document_graph_stats gs
+      ON gs.document_id = d.id
     WHERE {where}
     ORDER BY score
     LIMIT :limit

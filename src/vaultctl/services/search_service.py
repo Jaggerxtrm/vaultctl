@@ -12,7 +12,8 @@ def run_search(
     folder: str | None = None,
     tag: str | None = None,
     status: str | None = None,
+    rank: str = "bm25",
 ) -> list[dict[str, object]]:
     config = load_config()
     conn = connect(config.db_path)
-    return search_documents(conn, query, limit, source, folder, tag, status)
+    return search_documents(conn, query, limit, source, folder, tag, status, rank)
