@@ -32,3 +32,9 @@ data/
 .xtrm/packages/
 .xtrm/skills/
 .xtrm/statusline-claim
+
+# Beads / Dolt files (added by bd init)
+.beads-credential-key
+
+# Beads / Dolt files (added by bd init)
+.beads/proxieddb/
