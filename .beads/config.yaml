@@ -1,7 +1,0 @@
-dolt:
-    shared-server: true
-export:
-    git-add: false
-export.git-add: false
-sync:
-    remote: "git+ssh://git@github.com/Jaggerxtrm/vaultctl.git"
